@@ -51,10 +51,12 @@
                             } else {
                                 console.error(ids);
                                 console.error(xhr.status, xhr.responseText);
+                                alert('出现了一些问题[#1]，可以在控制台(F12)查看报错');
                             }
                         } else {
                             console.error(ids);
                             console.error(xhr.status, xhr.responseText);
+                            alert('出现了一些问题[#2]，可以在控制台(F12)查看报错');
                         }
                     }
                     xr.open("POST", `/nuke.php?__lib=topic_lock&__act=set&ids=${ids.join('%2C')}&ton=0&toff=0&pon=1026&poff=0&pm=&info=&delay=&cfid=${fid}&raw=3&nga_wd_helper_pids_del=1`);
