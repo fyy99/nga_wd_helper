@@ -6,7 +6,7 @@
 // @description       https://bbs.nga.cn/
 // @description:zh    https://bbs.nga.cn/
 // @description:zh-CN https://bbs.nga.cn/
-// @version           0.12
+// @version           0.13
 // @author            fyy99
 // @match             *://bbs.nga.cn/read.php*
 // @match             *://ngabbs.com/read.php*
@@ -15,6 +15,7 @@
 // @note              v0.10 初始版本：回帖批量锁隐功能完成
 // @note              v0.11 更换选中方式 & 插件不会在无管理权限的版面生效
 // @note              v0.12 优化选中样式 & 支持帖子属性面板的其他操作
+// @note              v0.13 bugfix
 // @grant             none
 // ==/UserScript==
 
@@ -48,21 +49,28 @@
                     }
                     if (ids.length == 0) {
                         alert('没有任何有效的选中项目');
+                        return;
                     }
                     let pon = 0;
                     let poff = 0;
-                    switch (prompt("1:锁隐 2:解除锁隐 3:编辑 4:通过审核\n其他选项视为取消操作", "1")) {
+                    switch (prompt("1:锁隐 2:锁定 3:隐藏\n4:解除锁隐 5:编辑许可 6:通过审核\n其他选项视为取消操作", "1")) {
                             case '1':
                             pon = 1026;
                             break;
                             case '2':
-                            poff = 1026;
+                            pon = 1024;
                             break;
                             case '3':
-                            pon = 128;
+                            pon = 2;
                             break;
                             case '4':
-                            pon = 67109376;
+                            poff = 1026;
+                            break;
+                            case '5':
+                            pon = 128;
+                            break;
+                            case '6':
+                            poff = 67109376;
                             break;
                     }
                     if (pon == 0 && poff == 0) {
