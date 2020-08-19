@@ -6,7 +6,7 @@
 // @description       https://bbs.nga.cn/
 // @description:zh    https://bbs.nga.cn/
 // @description:zh-CN https://bbs.nga.cn/
-// @version           0.15
+// @version           0.16
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -18,6 +18,7 @@
 // @note              v0.13 bugfix
 // @note              v0.14 批量加分 & 自动修改域名
 // @note              v0.15 bugfix & 显示主题样式和加精情况
+// @note              v0.16 bugfix & 显示机型和赞/踩
 // @grant             none
 // ==/UserScript==
 
@@ -74,27 +75,75 @@
                         return;
                     }
                     let opt;
-                    switch (prompt("1:声望威望金钱  2:声望威望  3:声望金钱  4:声望\n其他选项视为取消操作\n该操作将发送PM", "1")) {
+                    switch (prompt("1:声望威望金钱  2:声望威望  3:声望金钱\n4:声望(不限制档位)\n其他选项视为取消操作\n该操作将发送PM、加精、加推荐值", "1")) {
                         case '1':
-                            opt = 4194304 + 16 + 4 + 2 + 1;
+                            opt = 0 | 8 | 16777216 | 8388608 | 4 | 2 | 1;
                             break;
                         case '2':
-                            opt = 4194304 + 16 + 4 + 2;
+                            opt = 0 | 8 | 16777216 | 8388608 | 4 | 2;
                             break;
                         case '3':
-                            opt = 4194304 + 16 + 4 + 1;
+                            opt = 0 | 8 | 16777216 | 8388608 | 4 | 1;
                             break;
                         case '4':
-                            opt = 4194304 + 16 + 4;
+                            opt = 4194304 | 8 | 16777216 | 8388608 | 4;
                             break;
                         default:
                             alert('您已取消操作');
                             return;
                     }
-                    const value = prompt("请填写声望(-1500~1500)并确认\n\n加分过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示", "15");
-                    if (!value) {
-                        alert('您已取消操作');
-                        return;
+                    let value = '';
+                    if (opt & 4194304) {
+                        value = prompt("声望范围：-1500~1500\n输入并确认后继续\n\n操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示", "15");
+                        if (!value) {
+                            alert('您已取消操作');
+                            return;
+                        }
+                    } else {
+                        switch (prompt("加分档位：\n15/30/45/60/75/105/150/225/300/375/450/525/600\n输入并确认后继续\n\n加分过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示", "15")) {
+                            case '15':
+                                opt |= 16;
+                                break;
+                            case '30':
+                                opt |= 32;
+                                break;
+                            case '45':
+                                opt |= 64;
+                                break;
+                            case '60':
+                                opt |= 128;
+                                break;
+                            case '75':
+                                opt |= 256;
+                                break;
+                            case '105':
+                                opt |= 512;
+                                break;
+                            case '150':
+                                opt |= 1024;
+                                break;
+                            case '225':
+                                opt |= 2048;
+                                break;
+                            case '300':
+                                opt |= 4096;
+                                break;
+                            case '375':
+                                opt |= 8192;
+                                break;
+                            case '450':
+                                opt |= 16384;
+                                break;
+                            case '525':
+                                opt |= 32768;
+                                break;
+                            case '600':
+                                opt |= 65536;
+                                break;
+                            default:
+                                alert('您已取消操作');
+                                return;
+                        }
                     }
                     let results = '';
                     const mas = function (pids) {
@@ -131,7 +180,7 @@
                     }
                     let pon = 0;
                     let poff = 0;
-                    switch (prompt("1:锁隐  2:锁定  3:隐藏\n4:解除锁隐  5:编辑许可  6:通过审核\n其他选项视为取消操作\n该操作不会发送PM\n\n加分过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示", "1")) {
+                    switch (prompt("1:锁隐  2:锁定  3:隐藏\n4:解除锁隐  5:编辑许可  6:通过审核\n其他选项视为取消操作\n该操作不会发送PM\n\n操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示", "1")) {
                         case '1':
                             pon = 1026;
                             break;
@@ -197,6 +246,20 @@
                         }
                     }
                 });
+            }
+            // 机型 赞/踩
+            if (window.__GP.admincheck & 2) {
+            const floors = window.commonui.postArg.data;
+                for (let i in floors) {
+                    if (floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/')) {
+                        floors[i].recommendO.innerHTML += ` (<span style="color:#0dc60d;">${floors[i].score}</span>/<span style="color:#db7c7c;">${floors[i].score_2}</span>)`
+                    }
+                    if (floors[i].pInfoC && floors[i].pInfoC.querySelector("a[href*=app]") && !floors[i].pInfoC.querySelector("a[href*=app]").innerHTML.includes('/')) {
+                        floors[i].pInfoC.querySelector("a[href*=app]").removeAttribute('style');
+                        floors[i].pInfoC.querySelector("a[href*=app]").style.fontSize = '0.5em';
+                        floors[i].pInfoC.querySelector("a[href*=app]").innerHTML = (floors[i].fromClient || '').replace(/^\d+ /, '');
+                    }
+                }
             }
         }
     }, 1000);
