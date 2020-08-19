@@ -254,7 +254,7 @@
                     if (floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/')) {
                         floors[i].recommendO.innerHTML += ` (<span style="color:#0dc60d;">${floors[i].score}</span>/<span style="color:#db7c7c;">${floors[i].score_2}</span>)`
                     }
-                    if (floors[i].pInfoC && floors[i].pInfoC.querySelector("a[href*=app]") && !floors[i].pInfoC.querySelector("a[href*=app]").innerHTML.includes('/')) {
+                    if (floors[i].pInfoC && floors[i].pInfoC.querySelector("a[href*=app]") && floors[i].pInfoC.querySelector("a[href*=app]").style.fontSize != '0.5em') {
                         floors[i].pInfoC.querySelector("a[href*=app]").removeAttribute('style');
                         floors[i].pInfoC.querySelector("a[href*=app]").style.fontSize = '0.5em';
                         floors[i].pInfoC.querySelector("a[href*=app]").innerHTML = (floors[i].fromClient || '').replace(/^\d+ /, '');
