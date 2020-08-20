@@ -3,24 +3,16 @@
 // @name              nga_wd_helper
 // @name:zh           NGA版主助手
 // @name:zh-CN        NGA版主助手
-// @description       https://bbs.nga.cn/
-// @description:zh    https://bbs.nga.cn/
-// @description:zh-CN https://bbs.nga.cn/
-// @version           0.21
+// @description       https://ngabbs.com/read.php?tid=23037645
+// @description:zh    https://ngabbs.com/read.php?tid=23037645
+// @description:zh-CN https://ngabbs.com/read.php?tid=23037645
+// @version           0.25
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
 // @match             *://nga.178.com/*
 // @run-at            document-end
-// @note              v0.10 初始版本：回帖批量锁隐功能完成
-// @note              v0.11 更换选中方式 & 插件不会在无管理权限的版面生效
-// @note              v0.12 优化选中样式 & 支持帖子属性面板的其他操作
-// @note              v0.13 bugfix
-// @note              v0.14 批量加分 & 自动修改域名
-// @note              v0.15 bugfix & 显示主题样式和加精情况
-// @note              v0.16 bugfix & 显示机型和赞/踩
-// @note              v0.20 主题批量禁言操作、加精操作 & 新UI(论坛原生面板)
-// @note              v0.21 优化（回帖批量操作面板、批量评分）
+// @note              v0.25 Beta1
 // @grant             none
 // ==/UserScript==
 
@@ -112,7 +104,7 @@
                     new_button.type = 'button';
                     new_button.innerHTML = '确定(脚本批量)';
                     new_button.addEventListener('click', () => {
-                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面')) {
+                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                             let x = w.querySelectorAll('#adminwindow > div > div.div2 > div input');
                             let opt = 0;
                             for (let i = 0; i < x.length; i++) {
@@ -175,7 +167,7 @@
                     new_button.type = 'button';
                     new_button.innerHTML = '确定(脚本批量)';
                     new_button.addEventListener('click', () => {
-                        if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面')) {
+                        if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                             let pOn = 0;
                             let pOff = 0;
                             let x = w.querySelectorAll('div.div2 > div > form > div a');
@@ -224,21 +216,64 @@
                     }
                 });
                 pids_bar.querySelector('tr').appendChild(td_pids_del);
+                // 帮助
+                const td_pids_help = document.createElement('td');
+                td_pids_help.innerHTML = '<a href="https://ngabbs.com/read.php?pid=446518422&opt=128" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                pids_bar.querySelector('tr').appendChild(td_pids_help);
             }
+            // 机型 赞/踩
+            if (window.__GP.admincheck & 2) {
+                const floors = window.commonui.postArg.data;
+                for (let i in floors) {
+                    if (floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/')) {
+                        floors[i].recommendO.innerHTML += ` (<span style="color:#0dc60d;${floors[i].score > 10 ? 'font-weight:bold;' : ''}">${floors[i].score}</span>/<span style="color:#db7c7c;${floors[i].score_2 > 10 ? 'font-weight:bold;' : ''}">${floors[i].score_2}</span>)`;
+                    }
+                    if (floors[i].pInfoC && floors[i].pInfoC.querySelector('a[href*=app]')) {
+                        const a_app = floors[i].pInfoC.querySelector('a[href*=app]');
+                        const fromClient = (floors[i].fromClient || '').replace(/^\d+ /, '');
+                        a_app.removeAttribute('style');
+                        a_app.style.fontSize = '0.5em';
+                        a_app.target = '_blank';
+                        a_app.href = `https://cn.bing.com/search?q=${fromClient}`;
+                        a_app.innerHTML = fromClient;
+                        a_app.parentNode.insertBefore(a_app, a_app.parentNode.firstChild);
+                    }
+                }
+            }
+            // 标注楼主
+            const lzMark = (authorid) => {
+                if (!authorid) {
+                    return;
+                }
+                const lzs = document.querySelectorAll(`a[href*="nuke.php?func=ucp&uid=${authorid}"]`);
+                for (let lz of lzs){
+                    if (lz.querySelector('span[class=red]')) {
+                        continue;
+                    }
+                    const mark_span = document.createElement('span');
+                    mark_span.name = 'mark';
+                    mark_span.className = 'red';
+                    mark_span.innerHTML = ' [★]';
+                    lz.appendChild(mark_span);
+                }
+            };
+            lzMark(window.sessionStorage.getItem(`authorid_${window.__CURRENT_TID}`));
             // 主题样式
             if (!document.querySelector('#nga_wd_helper_title')) {
                 const tid = window.__CURRENT_TID;
                 const title_a = document.querySelector('#m_nav a.nav_link[href^=\\/read\\.php]');
+                const recommend_span = document.createElement('span');
+                recommend_span.id = 'nga_wd_helper_title';
+                title_a.appendChild(recommend_span);
                 window.__NUKE.doRequest({
                     u: `https://ngabbs.com/read.php?tid=${tid}&pid=0&opt=2&__output=1`,
                     f: function (d) {
                         if (!d.error && d.data) {
-                            const recommend_span = document.createElement('span');
-                            recommend_span.id = 'nga_wd_helper_title';
+                            window.sessionStorage.setItem(`authorid_${tid}`, d.data.__T.authorid);
+                            lzMark(d.data.__T.authorid);
                             recommend_span.style.fontSize = '0.6em';
                             recommend_span.style.fontWeight = 'normal';
                             recommend_span.innerHTML = ` (${d.data.__T.recommend})`;
-                            title_a.appendChild(recommend_span);
                             const topicMiscVar = window.commonui.topicMiscVar;
                             const topic_misc = topicMiscVar.unpack(d.data.__T.topic_misc);
                             title_a.style.padding = '0 10px';
@@ -249,21 +284,6 @@
                         }
                     },
                 });
-            }
-            // 机型 赞/踩
-            if (window.__GP.admincheck & 2) {
-                const floors = window.commonui.postArg.data;
-                for (let i in floors) {
-                    if (floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/')) {
-                        floors[i].recommendO.innerHTML += ` (<span style="color:#0dc60d;${floors[i].score > 10 ? 'font-weight:bold;' : ''}">${floors[i].score}</span>/<span style="color:#db7c7c;${floors[i].score_2 > 10 ? 'font-weight:bold;' : ''}">${floors[i].score_2}</span>)`;
-                    }
-                    if (floors[i].pInfoC && floors[i].pInfoC.querySelector('a[href*=app]') && floors[i].pInfoC.querySelector('a[href*=app]').style.fontSize != '0.5em') {
-                        floors[i].pInfoC.querySelector('a[href*=app]').removeAttribute('style');
-                        floors[i].pInfoC.querySelector('a[href*=app]').style.fontSize = '0.5em';
-                        floors[i].pInfoC.querySelector('a[href*=app]').innerHTML = (floors[i].fromClient || '').replace(/^\d+ /, '');
-                        floors[i].pInfoC.querySelector('a[href*=app]').parentNode.insertBefore(floors[i].pInfoC.querySelector('a[href*=app]'), floors[i].pInfoC.querySelector('a[href*=app]').parentNode.firstChild);
-                    }
-                }
             }
         }
         if (document.location.href.includes('/thread.php')) {
@@ -286,7 +306,7 @@
                             return;
                         }
                         const tids = tids_checked.split(',');
-                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面')) {
+                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                             let set = '';
                             let opt = 0;
                             const f = w.querySelectorAll('div.div3 > div input');
@@ -348,11 +368,16 @@
                         u: { u: '/nuke.php?__lib=modify_forum&__act=get_rule&raw=3', a: { tid: 1, pid: 1, fid: window.__CURRENT_FID, ffid: '' } },
                         f: function (d) {
                             const e = window.__NUKE.doRequestIfErr(d);
-                            if (e) {
+                            if (e || !d.data[0]) {
                                 return;
                             }
-                            const x = d.data[0].replace(/^\s+|\s+$/g, '').split('\n');
-                            console.log(x);
+                            const x = d.data[0].replace(/^\s+|\s+$/g, '').replace(/\n/g, '<br>');
+                            const is_reason = document.createElement('span');
+                            is_reason.innerHTML = '点击展开预设理由...<br>';
+                            is_reason.addEventListener('click', () => {
+                                is_reason.innerHTML = `${x}<br>`;
+                            });
+                            new_is.parentNode.insertBefore(is_reason, new_is.nextElementSibling.nextElementSibling);
                         },
                     });
                     const new_button = document.createElement('button');
@@ -364,7 +389,7 @@
                             return;
                         }
                         const tids = tids_checked.split(',');
-                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面')) {
+                        if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                             let opt = 2048;
                             for (let child of w.querySelector('div > div.div2 > div > span').childNodes) {
                                 if (child.nodeName != 'INPUT' || !child.checked || !child.nextSibling || !child.nextSibling.nodeValue) {
@@ -432,6 +457,9 @@
                     }
                 });
                 document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_lessernuke);
+                const td_tids_help = document.createElement('td');
+                td_tids_help.innerHTML = '<a href="https://ngabbs.com/read.php?pid=446518335&opt=128" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_help);
             }
         }
     }, 1000);
