@@ -6,7 +6,7 @@
 // @description       https://bbs.nga.cn/
 // @description:zh    https://bbs.nga.cn/
 // @description:zh-CN https://bbs.nga.cn/
-// @version           0.20
+// @version           0.21
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -20,6 +20,7 @@
 // @note              v0.15 bugfix & 显示主题样式和加精情况
 // @note              v0.16 bugfix & 显示机型和赞/踩
 // @note              v0.20 主题批量禁言操作、加精操作 & 新UI(论坛原生面板)
+// @note              v0.21 优化（回帖批量操作面板、批量评分）
 // @grant             none
 // ==/UserScript==
 
@@ -62,10 +63,40 @@
                     }
                     return ids;
                 };
+                // #nga_wd_helper_pids_bar
+                const pids_bar = document.createElement('div');
+                pids_bar.id = 'nga_wd_helper_pids_bar';
+                pids_bar.className = 'right_';
+                pids_bar.innerHTML = '<table class="stdbtn" cellspacing="0"><tbody><tr></tr></tbody></table>';
+                const postbbtm = document.querySelector('#postbbtm');
+                postbbtm.style.clear = 'both';
+                postbbtm.parentNode.insertBefore(pids_bar, postbbtm);
+                // 全选
+                const td_pids_all = document.createElement('td');
+                td_pids_all.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr silver" title="选中当前显示的所有帖子">全选</a>';
+                td_pids_all.addEventListener('click', () => {
+                    for (let span of document.querySelectorAll('span[id^=postdate][class*=stxt]:not([style*=darkred])')) {
+                        const e0 = document.createEvent('MouseEvents');
+                        e0.initEvent('click', true, true);
+                        span.dispatchEvent(e0);
+                    }
+                });
+                pids_bar.querySelector('tr').appendChild(td_pids_all);
+                // 反选
+                const td_pids_inv = document.createElement('td');
+                td_pids_inv.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr silver" title="反选当前显示的所有帖子">反选</a>';
+                td_pids_inv.addEventListener('click', () => {
+                    for (let span of document.querySelectorAll('span[id^=postdate][class*=stxt]')) {
+                        const e0 = document.createEvent('MouseEvents');
+                        e0.initEvent('click', true, true);
+                        span.dispatchEvent(e0);
+                    }
+                });
+                pids_bar.querySelector('tr').appendChild(td_pids_inv);
                 // #nga_wd_helper_pids_add
                 const td_pids_add = document.createElement('td');
                 td_pids_add.id = 'nga_wd_helper_pids_add';
-                td_pids_add.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="帖子批量加分">批量操作(加分)</a>';
+                td_pids_add.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="帖子批量评分">评分</a>';
                 td_pids_add.addEventListener('click', () => {
                     const fid = window.__CURRENT_FID;
                     const tid = window.__CURRENT_TID;
@@ -74,7 +105,7 @@
                         alert('没有任何有效的选中项目');
                         return;
                     }
-                    window.adminui.addpoint(null, 1, 1, 1);
+                    window.adminui.addpoint(null, 1, 1, fid);
                     const w = document.querySelector('#adminwindow');
                     w._.addTitle('评分(批量)');
                     const new_button = document.createElement('button');
@@ -124,11 +155,11 @@
                         break;
                     }
                 });
-                document.querySelector('#postbbtm > table > tbody > tr').appendChild(td_pids_add);
+                pids_bar.querySelector('tr').appendChild(td_pids_add);
                 // #nga_wd_helper_pids_del
                 const td_pids_del = document.createElement('td');
                 td_pids_del.id = 'nga_wd_helper_pids_del';
-                td_pids_del.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="批量设置帖子属性">批量操作(属性)</a>';
+                td_pids_del.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="批量设置帖子属性">属性</a>';
                 td_pids_del.addEventListener('click', () => {
                     const fid = window.__CURRENT_FID;
                     const tid = window.__CURRENT_TID;
@@ -192,7 +223,7 @@
                         break;
                     }
                 });
-                document.querySelector('#postbbtm > table > tbody > tr').appendChild(td_pids_del);
+                pids_bar.querySelector('tr').appendChild(td_pids_del);
             }
             // 主题样式
             if (!document.querySelector('#nga_wd_helper_title')) {
@@ -202,7 +233,6 @@
                     u: `https://ngabbs.com/read.php?tid=${tid}&pid=0&opt=2&__output=1`,
                     f: function (d) {
                         if (!d.error && d.data) {
-                            console.log(d);
                             const recommend_span = document.createElement('span');
                             recommend_span.id = 'nga_wd_helper_title';
                             recommend_span.style.fontSize = '0.6em';
