@@ -6,7 +6,7 @@
 // @description       https://ngabbs.com/read.php?tid=23037645
 // @description:zh    https://ngabbs.com/read.php?tid=23037645
 // @description:zh-CN https://ngabbs.com/read.php?tid=23037645
-// @version           0.26
+// @version           0.27
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -14,6 +14,7 @@
 // @run-at            document-end
 // @note              v0.25 Beta1
 // @note              v0.26 优化：支持/反对、刷新检测机制
+// @note              v0.27 新增：“连续翻页”按钮
 // @grant             none
 // ==/UserScript==
 
@@ -467,6 +468,56 @@
                     const td_tids_help = document.createElement('td');
                     td_tids_help.innerHTML = '<a href="https://ngabbs.com/read.php?pid=446518335&opt=128" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_help);
+                }
+            }
+            if (document.location.href.includes('/read.php') || document.location.href.includes('/thread.php')) {
+                // 连续翻页
+                const np = document.querySelector('a[title=加载下一页]');
+                if (np && !document.querySelector('#nga_wd_helper_next5')) {
+                    const next5_td = document.createElement('td');
+                    next5_td.id = 'nga_wd_helper_next5';
+                    next5_td.innerHTML = '<a href="javacript:void(0);" title="连续翻页" class=" uitxt1">&gt;&gt;</a>';
+                    next5_td.addEventListener('click', () => {
+                        next5_td.style.display = 'none';
+                        window.nps = {
+                            href: '',
+                            timeout: 5,
+                            page: 5,
+                        };
+                        const inv = setInterval(() => {
+                            if (window.nps.page-- == 0) {
+                                clearInterval(inv);
+                                window.commonui.alert('完成：已经向后翻动5页', '翻页结束');
+                                return;
+                            }
+                            if (document.readyState != 'complete') {
+                                if (window.nps.timeout-- == 0) {
+                                    clearInterval(inv);
+                                    window.commonui.alert('中止：翻页超时(>5s)而提前结束', '翻页结束');
+                                }
+                                return;
+                            }
+                            const np0 = document.querySelector('a[title=加载下一页]');
+                            if (!np0) {
+                                clearInterval(inv);
+                                window.commonui.alert('中止：已翻到最后一页', '翻页结束');
+                                return;
+                            }
+                            if (np0.href == window.nps.href) {
+                                if (window.nps.timeout-- == 0) {
+                                    clearInterval(inv);
+                                    window.commonui.alert('中止：翻页超时(>5s)而提前结束', '翻页结束');
+                                }
+                                return;
+                            }
+                            window.nps.href = np.href;
+                            window.nps.timeout = 5;
+                            const e0 = document.createEvent('MouseEvents');
+                            e0.initEvent('click', true, true);
+                            np0.dispatchEvent(e0);
+                        }, 1000);
+                    });
+                    np.parentNode.parentNode.insertBefore(next5_td, np.parentNode.nextElementSibling);
                 }
             }
         }, 1000);
