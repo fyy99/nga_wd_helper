@@ -6,7 +6,7 @@
 // @description       https://ngabbs.com/read.php?tid=23037645
 // @description:zh    https://ngabbs.com/read.php?tid=23037645
 // @description:zh-CN https://ngabbs.com/read.php?tid=23037645
-// @version           0.27
+// @version           0.28
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -15,6 +15,7 @@
 // @note              v0.25 Beta1
 // @note              v0.26 优化：支持/反对、刷新检测机制
 // @note              v0.27 新增：“连续翻页”按钮
+// @note              v0.28 修复：同步机型显示的变化
 // @grant             none
 // ==/UserScript==
 
@@ -238,12 +239,16 @@
                         if (floors[i].pInfoC && floors[i].pInfoC.querySelector('a[href*=app]')) {
                             const a_app = floors[i].pInfoC.querySelector('a[href*=app]');
                             const fromClient = (floors[i].fromClient || '').replace(/^\d+ /, '');
-                            a_app.removeAttribute('style');
-                            a_app.style.fontSize = '0.5em';
-                            a_app.target = '_blank';
-                            a_app.href = `https://cn.bing.com/search?q=${fromClient}`;
-                            a_app.innerHTML = fromClient;
-                            a_app.parentNode.insertBefore(a_app, a_app.parentNode.firstChild);
+                            if (fromClient == '/') {
+                                a_app.parentNode.removeChild(a_app);
+                            } else {
+                                a_app.removeAttribute('style');
+                                a_app.style.fontSize = '0.5em';
+                                a_app.target = '_blank';
+                                a_app.href = `https://cn.bing.com/search?q=${fromClient}`;
+                                a_app.innerHTML = fromClient;
+                                a_app.parentNode.insertBefore(a_app, a_app.parentNode.firstChild);
+                            }
                         }
                     }
                 }
