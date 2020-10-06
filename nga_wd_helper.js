@@ -6,7 +6,7 @@
 // @description       https://ngabbs.com/read.php?tid=23037645
 // @description:zh    https://ngabbs.com/read.php?tid=23037645
 // @description:zh-CN https://ngabbs.com/read.php?tid=23037645
-// @version           0.28
+// @version           0.30
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -16,6 +16,8 @@
 // @note              v0.26 优化：支持/反对、刷新检测机制
 // @note              v0.27 新增：“连续翻页”按钮
 // @note              v0.28 修复：同步机型显示的变化
+// @note              v0.29 修复：使用临时的帮助页
+// @note              v0.30 新增：新增回帖批量次级NUKE
 // @grant             none
 // ==/UserScript==
 
@@ -224,9 +226,119 @@
                         }
                     });
                     pids_bar.querySelector('tr').appendChild(td_pids_del);
+                    // #nga_wd_helper_pids_lessernuke
+                    const td_pids_lessernuke = document.createElement('td');
+                    td_pids_lessernuke.id = 'nga_wd_helper_pids_lessernuke';
+                    td_pids_lessernuke.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="批量次级NUKE">次级NUKE</a>';
+                    td_pids_lessernuke.addEventListener('click', () => {
+                        const fid = window.__CURRENT_FID;
+                        const tid = window.__CURRENT_TID;
+                        const pids = getSelectedPids();
+                        if (pids.length == 0) {
+                            alert('没有任何有效的选中项目');
+                            return;
+                        }
+                        window.commonui.lessernuke(null, 1, 1, null);
+                        const w = document.querySelector('#commonuiwindow');
+                        w._.addTitle('次级NUKE(批量)');
+                        const is = w.querySelector('input[maxlength="20"]');
+                        const new_is = document.createElement('input');
+                        new_is.maxlength = '20';
+                        new_is.placeholder = '操作说明(将显示在帖子中)';
+                        is.parentNode.insertBefore(new_is, is);
+                        is.parentNode.removeChild(is);
+                        window.__NUKE.doRequest({
+                            u: { u: '/nuke.php?__lib=modify_forum&__act=get_rule&raw=3', a: { tid: 1, pid: 1, fid: window.__CURRENT_FID, ffid: '' } },
+                            f: function (d) {
+                                const e = window.__NUKE.doRequestIfErr(d);
+                                if (e || !d.data[0]) {
+                                    return;
+                                }
+                                const x = d.data[0].replace(/^\s+|\s+$/g, '').replace(/\n/g, '<br>');
+                                const is_reason = document.createElement('span');
+                                is_reason.innerHTML = '点击展开预设理由...<br>';
+                                is_reason.addEventListener('click', () => {
+                                    is_reason.innerHTML = `${x}<br>`;
+                                });
+                                new_is.parentNode.insertBefore(is_reason, new_is.nextElementSibling.nextElementSibling);
+                            },
+                        });
+                        const new_button = document.createElement('button');
+                        new_button.type = 'button';
+                        new_button.innerHTML = '确定(脚本批量)';
+                        new_button.addEventListener('click', () => {
+                            if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
+                                let opt = 2048;
+                                for (let child of w.querySelector('div > div.div2 > div > span').childNodes) {
+                                    if (child.nodeName != 'INPUT' || !child.checked || !child.nextSibling || !child.nextSibling.nodeValue) {
+                                        continue;
+                                    }
+                                    if (child.nextSibling.nodeValue.startsWith('全论坛')) {
+                                        opt |= 128;
+                                    } else if (child.nextSibling.nodeValue.startsWith('本版面')) {
+                                        opt |= 256;
+                                    } else if (child.nextSibling.nodeValue.startsWith('本合集')) {
+                                        opt |= 512;
+                                    } else if (child.nextSibling.nodeValue.startsWith('本版声望')) {
+                                        opt |= 8192;
+                                    } else if (child.nextSibling.nodeValue.startsWith('禁言2天')) {
+                                        opt |= 16;
+                                    } else if (child.nextSibling.nodeValue.startsWith('禁言4天')) {
+                                        opt |= 32;
+                                    } else if (child.nextSibling.nodeValue.startsWith('禁言6天')) {
+                                        opt |= 64;
+                                    } else if (child.nextSibling.nodeValue.startsWith('禁言30天')) {
+                                        opt |= 16384;
+                                    } else if (child.nextSibling.nodeValue.startsWith('扣减声望')) {
+                                        opt |= 1;
+                                    } else if (child.nextSibling.nodeValue.startsWith('加倍扣减声望')) {
+                                        opt |= 2;
+                                    } else if (child.nextSibling.nodeValue.startsWith('同时扣减威望')) {
+                                        opt -= 2048;
+                                    } else if (child.nextSibling.nodeValue.startsWith('延时')) {
+                                        opt |= 4096;
+                                    }
+                                }
+                                const ist = new_is.value;
+                                const il = w.querySelector('textarea[placeholder="更长的操作说明(将通过短信发送)"]').value.replace(/^\s+|\s+$/g, '');
+                                if (!ist) {
+                                    alert('需要操作说明');
+                                    return;
+                                }
+                                let results = '';
+                                const mas = function (pids) {
+                                    if (pids.length) {
+                                        const pid = pids.shift();
+                                        window.__NUKE.doRequest({
+                                            u: { u: window.__API._base, a: { __lib: 'nuke', __act: 'lesser_nuke', tid: tid, pid: pid, opt: opt, info: il, infos: ist, infosk: '', raw: 3, nga_wd_helper_pids_lessernuke: 1 } },
+                                            f: function (d) {
+                                                const result = `pid:${pid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                results += result + '\n';
+                                                console.log(result);
+                                                mas(pids);
+                                            },
+                                        });
+                                    } else {
+                                        alert(`批量操作完成\n\n${results}`);
+                                    }
+                                };
+                                mas(pids);
+                            }
+                        });
+                        for (let old_button of w.querySelectorAll('button[type=button]')) {
+                            if (old_button.innerHTML != '确定') {
+                                continue;
+                            }
+                            old_button.parentNode.insertBefore(new_button, old_button);
+                            old_button.parentNode.removeChild(old_button);
+                            break;
+                        }
+                    });
+                    pids_bar.querySelector('tr').appendChild(td_pids_lessernuke);
                     // 帮助
                     const td_pids_help = document.createElement('td');
-                    td_pids_help.innerHTML = '<a href="https://ngabbs.com/read.php?pid=446518422&opt=128" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                    // https://ngabbs.com/read.php?pid=446518422&opt=128
+                    td_pids_help.innerHTML = '<a href="https://ngabbs.com/read.php?tid=23578220" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
                     pids_bar.querySelector('tr').appendChild(td_pids_help);
                 }
                 // 注册/登录时间 赞/踩 机型
@@ -363,7 +475,7 @@
                         }
                     });
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_color);
-                    // #nga_wd_helper_tids_color
+                    // #nga_wd_helper_tids_lessernuke
                     const td_tids_lessernuke = document.createElement('td');
                     td_tids_lessernuke.id = 'nga_wd_helper_tids_lessernuke';
                     td_tids_lessernuke.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="批量次级NUKE">次级NUKE</a>';
@@ -471,7 +583,8 @@
                     });
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_lessernuke);
                     const td_tids_help = document.createElement('td');
-                    td_tids_help.innerHTML = '<a href="https://ngabbs.com/read.php?pid=446518335&opt=128" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                    // https://ngabbs.com/read.php?pid=446518335&opt=128
+                    td_tids_help.innerHTML = '<a href="https://ngabbs.com/read.php?tid=23578220" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_help);
                 }
             }
