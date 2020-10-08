@@ -3,10 +3,10 @@
 // @name              nga_wd_helper
 // @name:zh           NGA版主助手
 // @name:zh-CN        NGA版主助手
-// @description       https://ngabbs.com/read.php?tid=23037645
-// @description:zh    https://ngabbs.com/read.php?tid=23037645
-// @description:zh-CN https://ngabbs.com/read.php?tid=23037645
-// @version           0.30
+// @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
+// @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
+// @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
+// @version           0.35
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -16,18 +16,72 @@
 // @note              v0.26 优化：支持/反对、刷新检测机制
 // @note              v0.27 新增：“连续翻页”按钮
 // @note              v0.28 修复：同步机型显示的变化
-// @note              v0.29 修复：使用临时的帮助页
 // @note              v0.30 新增：新增回帖批量次级NUKE
-// @grant             none
+// @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
+// @grant             GM_setValue
+// @grant             GM_getValue
+// @grant             unsafeWindow
 // ==/UserScript==
 
 (function () {
     'use strict';
+
+    window = unsafeWindow;
+
+    // 读取设置
+    const nga_wd_helper_jump = GM_getValue('nga_wd_helper_jump', 0);
+    const nga_wd_helper_offs = GM_getValue('nga_wd_helper_offs', 0);
+    const nga_wd_helper_reputation = GM_getValue('nga_wd_helper_reputation', '[7@网事杂谈]\n[447601@二次元国家地理]');
+
     // 跳转
-    if (!document.location.href.includes('ngabbs.com')) {
-        // ngabbs.com是客户端用的域名，兼容性最好
-        document.location.href = document.location.href.replace('bbs.nga.cn', 'ngabbs.com').replace('nga.178.com', 'ngabbs.com');
+    const nga_wd_helper_jump_target = nga_wd_helper_jump == 2 ? 'nga.178.com' : nga_wd_helper_jump == 1 ? 'bbs.nga.cn' : 'ngabbs.com';
+    if (!document.location.href.includes(nga_wd_helper_jump_target)) {
+        document.location.href = document.location.href.replace('ngabbs.com', nga_wd_helper_jump_target).replace('bbs.nga.cn', nga_wd_helper_jump_target).replace('nga.178.com', nga_wd_helper_jump_target);
     }
+
+    // 设置中心
+    window.commonui && window.commonui.mainMenu && window.commonui.mainMenu.addItemOnTheFly('WD插件', null, () => {
+        const setting_window = window.commonui.createCommmonWindow(4);
+        const $ = window._$;
+        let setting_html = `
+如有疑问，请前往阅读<a class="orangered" style="font-weight:bold" href="https://shimo.im/docs/QhJd3dKVvWh9Cx9W" target="_blank">[帮助文档]</a><br><br>
+自动跳转到<br>
+<span class="silver">该功能无法关闭，但您可以选择一个喜欢的域名</span><br>
+<table><tbody><tr><td><input type="radio" name="jump" value="0">ngabbs.com</td><td><input type="radio" name="jump" value="1">bbs.nga.cn</td><td><input type="radio" name="jump" value="2">nga.178.com</td></tr></tbody></table><br>
+功能开关<br>
+<span class="silver">星号表示仅任区内生效</span><br>
+<input type="checkbox" checked disabled title="该功能无法关闭"> 启用[批量操作]*<br>
+<input type="checkbox" name="offs" value="1"> 启用[显示赞踩]*<br>
+<input type="checkbox" name="offs" value="2"> 启用[显示机型]*<br>
+<input type="checkbox" name="offs" value="4"> 启用[标注样式]<br>
+<input type="checkbox" name="offs" value="8"> 启用[标注楼主]<br>
+<input type="checkbox" name="offs" value="16"> 启用[连续翻页]<br><br>
+显示用户声望<br>
+<span class="silver">将用户声望显示到用户中心</span>
+<span class="silver">[用户ID@版块名]，每行一个</span><br>
+<textarea name="reputation" placeholder="例如：\n[7@网事杂谈]\n[447601@二次元国家地理]" rows="4" cols="20"></textarea><br><br>
+<button name="setting_confirm" type="button">确定</button><br><br>`;
+        setting_window._.addContent(setting_html);
+        setting_window._.addTitle('[NGA版主助手]设置面板');
+        setting_window._.show();
+        document.querySelector(`input[type=radio][name=jump][value='${nga_wd_helper_jump}']`).checked = true;
+        document.querySelector("input[type=checkbox][name=offs][value='1']").checked = !(nga_wd_helper_offs & 1);
+        document.querySelector("input[type=checkbox][name=offs][value='2']").checked = !(nga_wd_helper_offs & 2);
+        document.querySelector("input[type=checkbox][name=offs][value='4']").checked = !(nga_wd_helper_offs & 4);
+        document.querySelector("input[type=checkbox][name=offs][value='8']").checked = !(nga_wd_helper_offs & 8);
+        document.querySelector("input[type=checkbox][name=offs][value='16']").checked = !(nga_wd_helper_offs & 16);
+        document.querySelector("textarea[name=reputation]").value = nga_wd_helper_reputation;
+        document.querySelector("button[type=button][name=setting_confirm]").addEventListener('click', () => {
+            GM_setValue('nga_wd_helper_jump', document.querySelector("input[type=radio][name=jump]:checked").value);
+            let offs = 0;
+            document.querySelectorAll("input[type=checkbox][name=offs]:not(:checked)").forEach(i => {
+                offs |= i.value;
+            });
+            GM_setValue('nga_wd_helper_offs', offs);
+            GM_setValue('nga_wd_helper_reputation', document.querySelector("textarea[name=reputation]").value);
+            location.reload();
+        });
+    });
 
     // 定时检测刷新
     setInterval(function () {
@@ -40,6 +94,7 @@
             if (document.location.href != href) {
                 return;
             }
+
             if (document.location.href.includes('/read.php')) {
                 // 批量操作(加分) 批量操作(属性)
                 if (window.__GP.admincheck & 2 && !document.querySelector('#nga_wd_helper_pids_add')) {
@@ -337,18 +392,17 @@
                     pids_bar.querySelector('tr').appendChild(td_pids_lessernuke);
                     // 帮助
                     const td_pids_help = document.createElement('td');
-                    // https://ngabbs.com/read.php?pid=446518422&opt=128
-                    td_pids_help.innerHTML = '<a href="https://ngabbs.com/read.php?tid=23578220" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                    td_pids_help.innerHTML = '<a href="https://shimo.im/docs/QhJd3dKVvWh9Cx9W" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
                     pids_bar.querySelector('tr').appendChild(td_pids_help);
                 }
-                // 注册/登录时间 赞/踩 机型
+                // 赞/踩 机型
                 if (window.__GP.admincheck & 2) {
                     const floors = window.commonui.postArg.data;
                     for (let i in floors) {
-                        if (floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/') && floors[i].recommendO.parentNode.style.backgroundColor != 'silver') {
-                            floors[i].recommendO.innerHTML += ` (<span style="color:#0dc60d;${floors[i].score > 10 ? 'font-weight:bold;' : ''}">${floors[i].score}</span>/<span style="color:#db7c7c;${floors[i].score_2 > 10 ? 'font-weight:bold;' : ''}">${floors[i].score_2}</span>)`;
+                        if (!(nga_wd_helper_offs & 1) && floors[i].recommendO && !floors[i].recommendO.innerHTML.includes('/') && floors[i].recommendO.parentNode.style.backgroundColor != 'silver') {
+                            floors[i].recommendO.innerHTML = `${floors[i].score} / ${floors[i].score_2}`;
                         }
-                        if (floors[i].pInfoC && floors[i].pInfoC.querySelector('a[href*=app]')) {
+                        if (!(nga_wd_helper_offs & 2) && floors[i].pInfoC && floors[i].pInfoC.querySelector('a[href*=app]')) {
                             const a_app = floors[i].pInfoC.querySelector('a[href*=app]');
                             const fromClient = (floors[i].fromClient || '').replace(/^\d+ /, '');
                             if (fromClient == '/') {
@@ -366,7 +420,7 @@
                 }
                 // 标注楼主
                 const lzMark = (authorid) => {
-                    if (!authorid) {
+                    if ((nga_wd_helper_offs & 8) || !authorid) {
                         return;
                     }
                     const lzs = document.querySelectorAll(`a[href*="nuke.php?func=ucp&uid=${authorid}"]`);
@@ -383,7 +437,7 @@
                 };
                 lzMark(window.sessionStorage.getItem(`authorid_${window.__CURRENT_TID}`));
                 // 主题样式
-                if (!document.querySelector('#nga_wd_helper_title')) {
+                if (!(nga_wd_helper_offs & 4) && !document.querySelector('#nga_wd_helper_title')) {
                     const tid = window.__CURRENT_TID;
                     const title_a = document.querySelector('#m_nav a.nav_link[href^=\\/read\\.php]');
                     const recommend_span = document.createElement('span');
@@ -583,15 +637,14 @@
                     });
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_lessernuke);
                     const td_tids_help = document.createElement('td');
-                    // https://ngabbs.com/read.php?pid=446518335&opt=128
-                    td_tids_help.innerHTML = '<a href="https://ngabbs.com/read.php?tid=23578220" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
+                    td_tids_help.innerHTML = '<a href="https://shimo.im/docs/QhJd3dKVvWh9Cx9W" target="_blank" class="cell rep txtbtnx nobr orange" title="查看帮助信息">帮助</a>';
                     document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_help);
                 }
             }
             if (document.location.href.includes('/read.php') || document.location.href.includes('/thread.php')) {
                 // 连续翻页
                 const np = document.querySelector('a[title=加载下一页]');
-                if (np && !document.querySelector('#nga_wd_helper_next5')) {
+                if (!(nga_wd_helper_offs & 16) && np && !document.querySelector('#nga_wd_helper_next5')) {
                     const next5_td = document.createElement('td');
                     next5_td.id = 'nga_wd_helper_next5';
                     next5_td.innerHTML = '<a href="javacript:void(0);" title="连续翻页" class=" uitxt1">&gt;&gt;</a>';
@@ -636,6 +689,33 @@
                         }, 1000);
                     });
                     np.parentNode.parentNode.insertBefore(next5_td, np.parentNode.nextElementSibling);
+                }
+            }
+            if (document.location.href.includes('/nuke.php') && document.location.href.includes('func=ucp') && document.location.href.includes('uid=')) {
+                // 用户声望
+                const uid = document.location.href.match(/uid=([0-9]+)/);
+                const reputation_span = document.querySelector("#ucpuser_fame_blockContent > div > span");
+                if (uid && uid[1] && reputation_span) {
+                    reputation_span.innerHTML += '<ul id="nga_wd_helper_reputation" class="info" style="padding: 0px; margin: 0px; min-width: 0px;"></ul>'
+                    const nga_wd_helper_reputation_ul = reputation_span.querySelector('#nga_wd_helper_reputation');
+                    const regexp = /\[([0-9]+)@([^\[\]]+)]/gm;
+                    let reputation_i;
+                    while (reputation_i = regexp.exec(nga_wd_helper_reputation)) {
+                        const reputation_i_ = reputation_i;
+                        window.__NUKE.doRequest({
+                            xr: true,
+                            u: {
+                                u: window.__API._base,
+                                a: { func: 'user_reputation', uid: uid[1], nameselect: 'uid', name: reputation_i_[1], __output: '11', nga_wd_helper_reputation: 1 },
+                            },
+                            f: (d) => {
+                                if (d && d.data && d.data[0] && d.data[0].includes('声望为')) {
+                                    nga_wd_helper_reputation_ul.innerHTML += `<li style="width: 240px;"><label>${reputation_i_[2]}</label><span style="color: gray;"> : ${d.data[0].match(/声望为 (-?[0-9]+)/)[1]}</span></li>`;
+                                }
+                            },
+                        });
+                    }
+                    //reputation_tabel.innerHTML += reputation_html + '<div class=" clear"><img src="about:blank" style="display: none;"></div>';
                 }
             }
         }, 1000);
