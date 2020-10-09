@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.35
+// @version           0.36
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -18,6 +18,7 @@
 // @note              v0.28 修复：同步机型显示的变化
 // @note              v0.30 新增：新增回帖批量次级NUKE
 // @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
+// @note              v0.36 优化：显示用户声望的title
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -57,7 +58,7 @@
 <input type="checkbox" name="offs" value="8"> 启用[标注楼主]<br>
 <input type="checkbox" name="offs" value="16"> 启用[连续翻页]<br><br>
 显示用户声望<br>
-<span class="silver">将用户声望显示到用户中心</span>
+<span class="silver">将用户声望显示到用户中心</span><br>
 <span class="silver">[用户ID@版块名]，每行一个</span><br>
 <textarea name="reputation" placeholder="例如：\n[7@网事杂谈]\n[447601@二次元国家地理]" rows="4" cols="20"></textarea><br><br>
 <button name="setting_confirm" type="button">确定</button><br><br>`;
@@ -710,7 +711,7 @@
                             },
                             f: (d) => {
                                 if (d && d.data && d.data[0] && d.data[0].includes('声望为')) {
-                                    nga_wd_helper_reputation_ul.innerHTML += `<li style="width: 240px;"><label>${reputation_i_[2]}</label><span style="color: gray;"> : ${d.data[0].match(/声望为 (-?[0-9]+)/)[1]}</span></li>`;
+                                    nga_wd_helper_reputation_ul.innerHTML += `<li style="width: 240px;"><label><span title="用户${d.data[0].match(/用户 (.+?) 对用户/)[1]}的声望">${reputation_i_[2]}</span></label><span style="color: gray;"> : ${d.data[0].match(/声望为 (-?[0-9]+)/)[1]}</span></li>`;
                                 }
                             },
                         });
