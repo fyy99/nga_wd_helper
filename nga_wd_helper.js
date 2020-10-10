@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.36
+// @version           0.37
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -19,6 +19,7 @@
 // @note              v0.30 新增：新增回帖批量次级NUKE
 // @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
 // @note              v0.36 优化：显示用户声望的title
+// @note              v0.37 bugfix
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -191,10 +192,15 @@
                                         window.__NUKE.doRequest({
                                             u: { u: window.__API._base, a: { __lib: 'add_point_v3', __act: 'add', opt: opt, fid: fid, tid: tid, pid: pid, info: info, value: value, raw: 3, nga_wd_helper_pids_add: 1 } },
                                             f: function (d) {
-                                                const result = `pid:${pid} ${d.error ? d.error[0] : d.data[0]}`;
-                                                results += result + '\n';
-                                                console.log(result);
-                                                mas(pids);
+                                                if (d && !d.error && d.data) {
+                                                    const result = `pid:${pid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(pids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
                                             },
                                         });
                                     } else {
@@ -259,15 +265,20 @@
                                 window.__NUKE.doRequest({
                                     u: { u: window.__API._base, a: { __lib: 'topic_lock', __act: 'set', ids: ids.join(','), ton: 0, toff: 0, pon: pOn, poff: pOff, pm: pm, info: info, delay: de, cfid: fid, raw: 3, nga_wd_helper_pids_del: 1 } },
                                     f: function (d) {
-                                        let result = '批量操作完成\n\n';
-                                        for (let i in d.error) {
-                                            result += d.error[i] + '\n';
+                                        if (d && !d.error && d.data) {
+                                            let result = '批量操作完成\n\n';
+                                            for (let i in d.error) {
+                                                result += d.error[i] + '\n';
+                                            }
+                                            for (let i in d.data) {
+                                                result += d.data[i] + '\n';
+                                            }
+                                            console.log(result);
+                                            alert(result);
+                                        } else {
+                                            alert('Request Failed!');
+                                            console.log(d);
                                         }
-                                        for (let i in d.data) {
-                                            result += d.data[i] + '\n';
-                                        }
-                                        console.log(result);
-                                        alert(result);
                                     },
                                 });
                             }
@@ -368,10 +379,15 @@
                                         window.__NUKE.doRequest({
                                             u: { u: window.__API._base, a: { __lib: 'nuke', __act: 'lesser_nuke', tid: tid, pid: pid, opt: opt, info: il, infos: ist, infosk: '', raw: 3, nga_wd_helper_pids_lessernuke: 1 } },
                                             f: function (d) {
-                                                const result = `pid:${pid} ${d.error ? d.error[0] : d.data[0]}`;
-                                                results += result + '\n';
-                                                console.log(result);
-                                                mas(pids);
+                                                if (d && !d.error && d.data) {
+                                                    const result = `pid:${pid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(pids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
                                             },
                                         });
                                     } else {
@@ -445,9 +461,9 @@
                     recommend_span.id = 'nga_wd_helper_title';
                     title_a.appendChild(recommend_span);
                     window.__NUKE.doRequest({
-                        u: `https://ngabbs.com/read.php?tid=${tid}&pid=0&opt=2&__output=1`,
+                        u: `https://${nga_wd_helper_jump_target}/read.php?tid=${tid}&pid=0&opt=2&__output=1`,
                         f: function (d) {
-                            if (!d.error && d.data) {
+                            if (d && !d.error && d.data) {
                                 window.sessionStorage.setItem(`authorid_${tid}`, d.data.__T.authorid);
                                 lzMark(d.data.__T.authorid);
                                 recommend_span.style.fontSize = '0.6em';
@@ -460,6 +476,9 @@
                                 title_a.style.fontWeight = topic_misc._BIT1 & topicMiscVar._FONT_B ? 'bold' : 'normal';
                                 title_a.style.fontStyle = topic_misc._BIT1 & topicMiscVar._FONT_I ? 'italic' : '';
                                 title_a.style.textDecoration = topic_misc._BIT1 & topicMiscVar._FONT_U ? 'line-through' : '';
+                            } else {
+                                alert('Request Failed!');
+                                console.log(d);
                             }
                         },
                     });
@@ -507,10 +526,15 @@
                                         window.__NUKE.doRequest({
                                             u: { u: window.__API._base, a: { __lib: 'topic_color', __act: 'set', tid: tid, font: set, opt: opt, raw: 3, nga_wd_helper_tids_color: 1 } },
                                             f: function (d) {
-                                                const result = `tid:${tid} ${d.error ? d.error[0] : d.data[0]}`;
-                                                results += result + '\n';
-                                                console.log(result);
-                                                mas(tids);
+                                                if (d && !d.error && d.data) {
+                                                    const result = `tid:${tid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(tids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
                                             },
                                         });
                                     } else {
@@ -614,10 +638,15 @@
                                         window.__NUKE.doRequest({
                                             u: { u: window.__API._base, a: { __lib: 'nuke', __act: 'lesser_nuke', tid: tid, pid: 0, opt: opt, info: il, infos: ist, infosk: '', raw: 3, nga_wd_helper_tids_lessernuke: 1 } },
                                             f: function (d) {
-                                                const result = `tid:${tid} ${d.error ? d.error[0] : d.data[0]}`;
-                                                results += result + '\n';
-                                                console.log(result);
-                                                mas(tids);
+                                                if (d && !d.error && d.data) {
+                                                    const result = `tid:${tid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(tids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
                                             },
                                         });
                                     } else {
@@ -710,8 +739,11 @@
                                 a: { func: 'user_reputation', uid: uid[1], nameselect: 'uid', name: reputation_i_[1], __output: '11', nga_wd_helper_reputation: 1 },
                             },
                             f: (d) => {
-                                if (d && d.data && d.data[0] && d.data[0].includes('声望为')) {
+                                if (d && !d.error && d.data && d.data[0] && d.data[0].includes('声望为')) {
                                     nga_wd_helper_reputation_ul.innerHTML += `<li style="width: 240px;"><label><span title="用户${d.data[0].match(/用户 (.+?) 对用户/)[1]}的声望">${reputation_i_[2]}</span></label><span style="color: gray;"> : ${d.data[0].match(/声望为 (-?[0-9]+)/)[1]}</span></li>`;
+                                } else {
+                                    alert('Request Failed!');
+                                    console.log(d);
                                 }
                             },
                         });
