@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.37
+// @version           0.38
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -18,8 +18,7 @@
 // @note              v0.28 修复：同步机型显示的变化
 // @note              v0.30 新增：新增回帖批量次级NUKE
 // @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
-// @note              v0.36 优化：显示用户声望的title
-// @note              v0.37 bugfix
+// @note              v0.38 新增：回帖批量操作可以选择不延时
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -237,8 +236,62 @@
                         w._.addTitle('设置帖子属性(批量)');
                         const new_button = document.createElement('button');
                         new_button.type = 'button';
-                        new_button.innerHTML = '确定(脚本批量)';
+                        new_button.innerHTML = '确定(脚本批量-非延时)';
                         new_button.addEventListener('click', () => {
+                            if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
+                                let pOn = 0;
+                                let pOff = 0;
+                                let x = w.querySelectorAll('div.div2 > div > form > div a');
+                                for (let i = 0; i < x.length; i++) {
+                                    if (x[i].innerHTML == 'on') {
+                                        pOn |= parseInt(x[i].name, 10);
+                                    } else if (x[i].innerHTML == 'off') {
+                                        pOff |= parseInt(x[i].name, 10);
+                                    }
+                                }
+                                if (pOn & 32768) {
+                                    // ???
+                                    if (!confirm('转为合集后不能转回 是否继续')) {
+                                        return;
+                                    }
+                                }
+                                if (!pOn && !pOff) {
+                                    return;
+                                }
+                                const pm = w.querySelector('input[type=checkbox][name=pm]').checked ? 1 : '';
+                                const info = w.querySelector('textarea[name=info]').value.replace(/^\s+|\s+$/, '');
+                                const de = w.querySelector('select[name=delay]').value;
+                                let results = '';
+                                console.log(ids);
+                                const mas = function (ids) {
+                                    if (ids.length) {
+                                        const ids_i = ids.shift();
+                                        const ids_i2 = ids.shift();
+                                        window.__NUKE.doRequest({
+                                            u: { u: window.__API._base, a: { __lib: 'topic_lock', __act: 'set', ids: `${ids_i},${ids_i2}`, ton: 0, toff: 0, pon: pOn, poff: pOff, pm: pm, info: info, delay: de, cfid: fid, raw: 3, nga_wd_helper_pids_del: 1 } },
+                                            f: function (d) {
+                                                if (d && !d.error && d.data) {
+                                                    const result = `id:${ids_i} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(ids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
+                                            },
+                                        });
+                                    } else {
+                                        alert(`批量操作完成\n\n${results}`);
+                                    }
+                                };
+                                mas(ids);
+                            }
+                        });
+                        const new_button2 = document.createElement('button');
+                        new_button2.type = 'button';
+                        new_button2.innerHTML = '确定(脚本批量-延时生效)';
+                        new_button2.addEventListener('click', () => {
                             if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                                 let pOn = 0;
                                 let pOff = 0;
@@ -283,11 +336,15 @@
                                 });
                             }
                         });
+                        const help_span = document.createElement('span');
+                        help_span.innerHTML = '<br><br><span class="silver">*延时操作较稳定(推荐)</span><br>';
                         for (let old_button of w.querySelectorAll('button[type=button]')) {
                             if (old_button.innerHTML != '确定') {
                                 continue;
                             }
                             old_button.parentNode.insertBefore(new_button, old_button);
+                            old_button.parentNode.insertBefore(help_span, old_button);
+                            old_button.parentNode.insertBefore(new_button2, old_button);
                             old_button.parentNode.removeChild(old_button);
                             break;
                         }
