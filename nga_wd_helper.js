@@ -19,6 +19,7 @@
 // @note              v0.30 新增：新增回帖批量次级NUKE
 // @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
 // @note              v0.38 新增：回帖批量操作可以选择不延时
+// @note              v0.39 新增：主题批量提前/下沉
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -543,8 +544,55 @@
             }
             if (document.location.href.includes('/thread.php')) {
                 //window.commonui.topicArg
-                // 批量操作(标题颜色) 批量操作(次级NUKE)
+                // 批量操作(提前下沉) 批量操作(标题颜色) 批量操作(次级NUKE)
                 if (window.__GP.admincheck & 2 && !document.querySelector('#nga_wd_helper_tids_color')) {
+                    // #nga_wd_helper_tids_push
+                    const td_tids_push = document.createElement('td');
+                    td_tids_push.id = 'nga_wd_helper_tids_push';
+                    td_tids_push.innerHTML = '<a href="javascript:void(0)" class="cell rep txtbtnx nobr blue" title="批量将主题帖提前或下沉">提前下沉</a>';
+                    td_tids_push.addEventListener('click', () => {
+                        window.adminui.createadminwindow();
+                        window.adminui.w._.addContent(null)
+                        window.adminui.w._.addTitle('提前或下沉主题(批量)');
+                        const push_action = (down = '') =>{
+                            const tids_checked = window.commonui.massAdmin.getChecked();
+                            if (!tids_checked) {
+                                return;
+                            }
+                            const tids = tids_checked.split(',');
+                            if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
+                                let results = '';
+                                const mas = function (tids) {
+                                    if (tids.length) {
+                                        const tid = tids.shift();
+                                        window.__NUKE.doRequest({
+                                            u: { u: window.__API._base, a: { __lib: 'topic_push', __act: 'push', tid: tid, down: down, raw: 3, nga_wd_helper_tids_push: 1 } },
+                                            f: function (d) {
+                                                if (d && !d.error && d.data) {
+                                                    const result = `tid:${tid} ${d.error ? d.error[0] : d.data[0]}`;
+                                                    results += result + '\n';
+                                                    console.log(result);
+                                                    mas(tids);
+                                                } else {
+                                                    alert('Request Failed!');
+                                                    console.log(d);
+                                                }
+                                            },
+                                        });
+                                    } else {
+                                        alert(`批量操作完成\n\n${results}`);
+                                    }
+                                };
+                                mas(tids);
+                            }
+                        }
+                        window.adminui.w._.addContent(
+                            _$('/button').$0('innerHTML','提前主题','type','button','onclick', () => push_action()),
+                            _$('/button').$0('innerHTML','下沉主题','type','button','onclick', () => push_action(1))
+                        );
+                        window.adminui.w._.show();
+                    });
+                    document.querySelector('#m_fopts > div > div > table > tbody > tr').appendChild(td_tids_push);
                     // #nga_wd_helper_tids_color
                     const td_tids_color = document.createElement('td');
                     td_tids_color.id = 'nga_wd_helper_tids_color';
@@ -811,3 +859,4 @@
         }, 1000);
     }, 100);
 })();
+
