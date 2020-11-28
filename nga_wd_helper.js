@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.38
+// @version           0.39
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
