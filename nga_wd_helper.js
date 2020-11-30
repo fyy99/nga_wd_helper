@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.40
+// @version           0.41
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -21,6 +21,7 @@
 // @note              v0.38 新增：回帖批量操作可以选择不延时
 // @note              v0.39 新增：主题批量提前/下沉
 // @note              v0.40 修复：解决连续进行同种回帖批量操作不生效的问题
+// @note              v0.41 新增：提供两种标注楼主的风格
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -53,12 +54,13 @@
 <table><tbody><tr><td><input type="radio" name="jump" value="0">ngabbs.com</td><td><input type="radio" name="jump" value="1">bbs.nga.cn</td><td><input type="radio" name="jump" value="2">nga.178.com</td></tr></tbody></table><br>
 功能开关<br>
 <span class="silver">星号表示仅任区内生效</span><br>
-<input type="checkbox" checked disabled title="该功能无法关闭"> 启用[批量操作]*<br>
-<input type="checkbox" name="offs" value="1"> 启用[显示赞踩]*<br>
-<input type="checkbox" name="offs" value="2"> 启用[显示机型]*<br>
-<input type="checkbox" name="offs" value="4"> 启用[标注样式]<br>
-<input type="checkbox" name="offs" value="8"> 启用[标注楼主]<br>
-<input type="checkbox" name="offs" value="16"> 启用[连续翻页]<br><br>
+<input type="checkbox" checked disabled title="该功能无法关闭">启用[批量操作]*<br>
+<input type="checkbox" name="offs" id="offs1" value="1"><label for="offs1">启用[显示赞踩]*</label><br>
+<input type="checkbox" name="offs" id="offs2" value="2"><label for="offs2">启用[显示机型]*</label><br>
+<input type="checkbox" name="offs" id="offs16" value="16"><label for="offs16">启用[连续翻页]</label><br>
+<input type="checkbox" name="offs" id="offs4" value="4"><label for="offs4">启用[标注样式]</label><br>
+<input type="checkbox" name="offs" id="offs8" value="8"><label for="offs8">启用[标注楼主]</label><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="marklz" id="offs32" value="32"><label for="offs32">★型</label>&nbsp;&nbsp;<input type="radio" name="marklz" id="offs32a"><label for="offs32a">方型</label><br><br>
 显示用户声望<br>
 <span class="silver">将用户声望显示到用户中心</span><br>
 <span class="silver">[用户ID@版块名]，每行一个</span><br>
@@ -73,6 +75,8 @@
         document.querySelector("input[type=checkbox][name=offs][value='4']").checked = !(nga_wd_helper_offs & 4);
         document.querySelector("input[type=checkbox][name=offs][value='8']").checked = !(nga_wd_helper_offs & 8);
         document.querySelector("input[type=checkbox][name=offs][value='16']").checked = !(nga_wd_helper_offs & 16);
+        document.querySelector("input#offs32").checked = !(nga_wd_helper_offs & 32);
+        document.querySelector("input#offs32a").checked = (nga_wd_helper_offs & 32);
         document.querySelector("textarea[name=reputation]").value = nga_wd_helper_reputation;
         document.querySelector("button[type=button][name=setting_confirm]").addEventListener('click', () => {
             GM_setValue('nga_wd_helper_jump', document.querySelector("input[type=radio][name=jump]:checked").value);
@@ -80,6 +84,9 @@
             document.querySelectorAll("input[type=checkbox][name=offs]:not(:checked)").forEach(i => {
                 offs |= i.value;
             });
+            if (document.querySelector("input#offs32a").checked) {
+                offs |= 32;
+            }
             GM_setValue('nga_wd_helper_offs', offs);
             GM_setValue('nga_wd_helper_reputation', document.querySelector("textarea[name=reputation]").value);
             location.reload();
@@ -503,16 +510,30 @@
                     if ((nga_wd_helper_offs & 8) || !authorid) {
                         return;
                     }
-                    const lzs = document.querySelectorAll(`a[href*="nuke.php?func=ucp&uid=${authorid}"]`);
-                    for (let lz of lzs){
-                        if (lz.querySelector('span[class=red]')) {
-                            continue;
+                    if (nga_wd_helper_offs & 32) {
+                        const floors = window.commonui.postArg.data;
+                        for (let i in floors) {
+                            if (i != 0 && floors[i].pAid == authorid && floors[i].recommendO && floors[i].recommendO.parentNode && floors[i].recommendO.parentNode.nextElementSibling && floors[i].recommendO.parentNode.nextElementSibling.name != 'nga_wd_helper_lzmark2') {
+                                const mark_span = document.createElement('span');
+                                mark_span.name = 'nga_wd_helper_lzmark2';
+                                mark_span.innerHTML = ' <span class="block_txt white nobr vertmod" style="background-color:#369;" title="由楼主发表">楼主</span>';
+                                console.log(floors[i].recommendO.parentNode.parentNode);
+                                console.log(floors[i].recommendO.parentNode.nextElementSibling);
+                                floors[i].recommendO.parentNode.parentNode.insertBefore(mark_span, floors[i].recommendO.parentNode.nextElementSibling);
+                            }
                         }
-                        const mark_span = document.createElement('span');
-                        mark_span.name = 'mark';
-                        mark_span.className = 'red';
-                        mark_span.innerHTML = ' [★]';
-                        lz.appendChild(mark_span);
+                    } else {
+                        const lzs = document.querySelectorAll(`a[href*="nuke.php?func=ucp&uid=${authorid}"]`);
+                        for (let lz of lzs){
+                            if (lz.querySelector('span[class=red]')) {
+                                continue;
+                            }
+                            const mark_span = document.createElement('span');
+                            mark_span.name = 'mark';
+                            mark_span.className = 'red';
+                            mark_span.innerHTML = ' [★]';
+                            lz.appendChild(mark_span);
+                        }
                     }
                 };
                 lzMark(window.sessionStorage.getItem(`authorid_${window.__CURRENT_TID}`));
