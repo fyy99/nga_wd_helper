@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.41
+// @version           0.42
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -21,7 +21,7 @@
 // @note              v0.38 新增：回帖批量操作可以选择不延时
 // @note              v0.39 新增：主题批量提前/下沉
 // @note              v0.40 修复：解决连续进行同种回帖批量操作不生效的问题
-// @note              v0.41 新增：提供两种标注楼主的风格
+// @note              v0.42 新增：提供两种标注楼主的风格
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -513,7 +513,7 @@
                     if (nga_wd_helper_offs & 32) {
                         const floors = window.commonui.postArg.data;
                         for (let i in floors) {
-                            if (i != 0 && floors[i].pAid == authorid && floors[i].recommendO && floors[i].recommendO.parentNode && floors[i].recommendO.parentNode.nextElementSibling && floors[i].recommendO.parentNode.nextElementSibling.name != 'nga_wd_helper_lzmark2') {
+                            if (floors[i].pAid == authorid && floors[i].recommendO && floors[i].recommendO.parentNode && floors[i].recommendO.parentNode.nextElementSibling && floors[i].recommendO.parentNode.nextElementSibling.name != 'nga_wd_helper_lzmark2') {
                                 const mark_span = document.createElement('span');
                                 mark_span.name = 'nga_wd_helper_lzmark2';
                                 mark_span.innerHTML = ' <span class="block_txt white nobr vertmod" style="background-color:#369;" title="由楼主发表">楼主</span>';
@@ -565,6 +565,21 @@
                                 console.log(d);
                             }
                         },
+                    });
+                } else if (!(nga_wd_helper_offs & 8) && !document.querySelector('#nga_wd_helper_title')) {
+                    const tid = window.__CURRENT_TID;
+                    const title_a = document.querySelector('#m_nav a.nav_link[href^=\\/read\\.php]');
+                    const recommend_span = document.createElement('span');
+                    recommend_span.id = 'nga_wd_helper_title';
+                    title_a.appendChild(recommend_span);
+                    window.__NUKE.doRequest({
+                        u: `https://${nga_wd_helper_jump_target}/read.php?tid=${tid}&pid=0&opt=2&__output=1`,
+                        f: function (d) {
+                            if (d && !d.error && d.data) {
+                                window.sessionStorage.setItem(`authorid_${tid}`, d.data.__T.authorid);
+                                lzMark(d.data.__T.authorid);
+                            }
+                        }
                     });
                 }
             }
@@ -885,4 +900,5 @@
         }, 1000);
     }, 100);
 })();
+
 
