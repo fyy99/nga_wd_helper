@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.39
+// @version           0.40
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -20,6 +20,7 @@
 // @note              v0.35 优化：弱化赞踩显示；新增：设置面板；新增：个人声望查询
 // @note              v0.38 新增：回帖批量操作可以选择不延时
 // @note              v0.39 新增：主题批量提前/下沉
+// @note              v0.40 修复：解决连续进行同种回帖批量操作不生效的问题
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -159,11 +160,6 @@
                     td_pids_add.addEventListener('click', () => {
                         const fid = window.__CURRENT_FID;
                         const tid = window.__CURRENT_TID;
-                        const pids = getSelectedPids();
-                        if (pids.length == 0) {
-                            alert('没有任何有效的选中项目');
-                            return;
-                        }
                         window.adminui.addpoint(null, 1, 1, fid);
                         const w = document.querySelector('#adminwindow');
                         w._.addTitle('评分(批量)');
@@ -171,6 +167,11 @@
                         new_button.type = 'button';
                         new_button.innerHTML = '确定(脚本批量)';
                         new_button.addEventListener('click', () => {
+                            const pids = getSelectedPids();
+                            if (pids.length == 0) {
+                                alert('没有任何有效的选中项目');
+                                return;
+                            }
                             if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                                 let x = w.querySelectorAll('#adminwindow > div > div.div2 > div input');
                                 let opt = 0;
@@ -227,11 +228,6 @@
                     td_pids_del.addEventListener('click', () => {
                         const fid = window.__CURRENT_FID;
                         const tid = window.__CURRENT_TID;
-                        const ids = getSelectedPids(tid);
-                        if (ids.length == 0) {
-                            alert('没有任何有效的选中项目');
-                            return;
-                        }
                         window.commonui.setPost(null, 1, 1, null);
                         const w = document.querySelector('#commonuiwindow');
                         w._.addTitle('设置帖子属性(批量)');
@@ -239,6 +235,11 @@
                         new_button.type = 'button';
                         new_button.innerHTML = '确定(脚本批量-非延时)';
                         new_button.addEventListener('click', () => {
+                            const ids = getSelectedPids(tid);
+                            if (ids.length == 0) {
+                                alert('没有任何有效的选中项目');
+                                return;
+                            }
                             if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                                 let pOn = 0;
                                 let pOff = 0;
@@ -263,7 +264,6 @@
                                 const info = w.querySelector('textarea[name=info]').value.replace(/^\s+|\s+$/, '');
                                 const de = w.querySelector('select[name=delay]').value;
                                 let results = '';
-                                console.log(ids);
                                 const mas = function (ids) {
                                     if (ids.length) {
                                         const ids_i = ids.shift();
@@ -293,6 +293,11 @@
                         new_button2.type = 'button';
                         new_button2.innerHTML = '确定(脚本批量-延时生效)';
                         new_button2.addEventListener('click', () => {
+                            const ids = getSelectedPids(tid);
+                            if (ids.length == 0) {
+                                alert('没有任何有效的选中项目');
+                                return;
+                            }
                             if (confirm('即将进入批量操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                                 let pOn = 0;
                                 let pOff = 0;
@@ -358,11 +363,6 @@
                     td_pids_lessernuke.addEventListener('click', () => {
                         const fid = window.__CURRENT_FID;
                         const tid = window.__CURRENT_TID;
-                        const pids = getSelectedPids();
-                        if (pids.length == 0) {
-                            alert('没有任何有效的选中项目');
-                            return;
-                        }
                         window.commonui.lessernuke(null, 1, 1, null);
                         const w = document.querySelector('#commonuiwindow');
                         w._.addTitle('次级NUKE(批量)');
@@ -392,6 +392,11 @@
                         new_button.type = 'button';
                         new_button.innerHTML = '确定(脚本批量)';
                         new_button.addEventListener('click', () => {
+                            const pids = getSelectedPids();
+                            if (pids.length == 0) {
+                                alert('没有任何有效的选中项目');
+                                return;
+                            }
                             if (confirm('即将进入批量循环操作\n请再次检查参数设置\n批量操作过程中不要关闭窗口或离开本页面\n操作完成后会有弹窗提示')) {
                                 let opt = 2048;
                                 for (let child of w.querySelector('div > div.div2 > div > span').childNodes) {
