@@ -6,7 +6,7 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.43
+// @version           0.44
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
@@ -23,6 +23,7 @@
 // @note              v0.40 修复：解决连续进行同种回帖批量操作不生效的问题
 // @note              v0.42 新增：提供两种标注楼主的风格
 // @note              v0.43 优化：方型标记支持点击仅查看楼主，优化[标注楼主]的设置面板
+// @note              v0.44 细节优化
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -825,7 +826,7 @@
                 if (!(nga_wd_helper_offs & 16) && np && !document.querySelector('#nga_wd_helper_next5')) {
                     const next5_td = document.createElement('td');
                     next5_td.id = 'nga_wd_helper_next5';
-                    next5_td.innerHTML = '<a href="javacript:void(0);" title="连续翻页" class=" uitxt1">&gt;&gt;</a>';
+                    next5_td.innerHTML = '<a href="javascript:void(0);" title="连续翻页" class=" uitxt1">&gt;&gt;</a>';
                     next5_td.addEventListener('click', () => {
                         next5_td.style.display = 'none';
                         window.nps = {
@@ -869,9 +870,9 @@
                     np.parentNode.parentNode.insertBefore(next5_td, np.parentNode.nextElementSibling);
                 }
             }
-            if (document.location.href.includes('/nuke.php') && document.location.href.includes('func=ucp') && document.location.href.includes('uid=')) {
+            if (document.location.href.includes('/nuke.php') && document.location.href.includes('func=ucp') && document.querySelector('form[method=post][target=_blank]')) {
                 // 用户声望
-                const uid = document.location.href.match(/uid=([0-9]+)/);
+                const uid = document.querySelector('form[method=post][target=_blank]').action.match(/uid=([0-9]+)/);
                 const reputation_span = document.querySelector("#ucpuser_fame_blockContent > div > span");
                 if (uid && uid[1] && reputation_span) {
                     reputation_span.innerHTML += '<ul id="nga_wd_helper_reputation" class="info" style="padding: 0px; margin: 0px; min-width: 0px;"></ul>'
@@ -902,5 +903,4 @@
         }, 1000);
     }, 100);
 })();
-
 
