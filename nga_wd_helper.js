@@ -6,13 +6,13 @@
 // @description       https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh    https://shimo.im/docs/QhJd3dKVvWh9Cx9W
 // @description:zh-CN https://shimo.im/docs/QhJd3dKVvWh9Cx9W
-// @version           0.44
+// @version           0.45
 // @author            fyy99
 // @match             *://ngabbs.com/*
 // @match             *://bbs.nga.cn/*
 // @match             *://nga.178.com/*
 // @run-at            document-end
-// @note              v0.25 Beta1
+// @note              v0.25 Beta
 // @note              v0.26 优化：支持/反对、刷新检测机制
 // @note              v0.27 新增：“连续翻页”按钮
 // @note              v0.28 修复：同步机型显示的变化
@@ -23,7 +23,7 @@
 // @note              v0.40 修复：解决连续进行同种回帖批量操作不生效的问题
 // @note              v0.42 新增：提供两种标注楼主的风格
 // @note              v0.43 优化：方型标记支持点击仅查看楼主，优化[标注楼主]的设置面板
-// @note              v0.44 细节优化
+// @note              v0.45 新增：用户信息标签
 // @grant             GM_setValue
 // @grant             GM_getValue
 // @grant             unsafeWindow
@@ -45,10 +45,37 @@
         document.location.href = document.location.href.replace('ngabbs.com', nga_wd_helper_jump_target).replace('bbs.nga.cn', nga_wd_helper_jump_target).replace('nga.178.com', nga_wd_helper_jump_target);
     }
 
+
+    if (window.commonui) {
+        window.commonui.ucplink = (e, uid) => {
+            if (!window.commonui.ucplinko) {
+                window.commonui.ucplinko = window._$('/span').$0('className','urltip2 urltip3','style',{textAlign:'left',margin:'0'})
+                document.body.appendChild(window.commonui.ucplinko);
+            }
+            if (!uid || !window.commonui.userInfo.users[uid]) {
+                window.commonui.ucplinko.innerHTML = '<nobr>找不到该用户的信息！</nobr>';
+            } else {
+                window.commonui.ucplinko.name = uid;
+                window.commonui.ucplinko.innerHTML = `<nobr>铜币:${window.commonui.userInfo.users[uid].money}</nobr><br><nobr>威望:${window.commonui.userInfo.users[uid].rvrc / 10}</nobr>`;
+                for (let reputation in window.commonui.userInfo.reputations) {
+                    window.commonui.ucplinko.innerHTML += `<br><nobr>声望(${reputation}):${window.commonui.userInfo.reputations[reputation][uid]}</nobr>`;
+                }
+                window.commonui.ucplinko.innerHTML += `<br><nobr>注册:${window.commonui.time2date(window.commonui.userInfo.users[uid].regdate)}</nobr><br><nobr>登录:${window.commonui.time2date(window.commonui.userInfo.users[uid].thisvisit)}</nobr>`;
+            }
+            window.tTip.showdscp(e, window.commonui.ucplinko);
+            setTimeout(() => {
+                if (window.commonui.ucplinko.name != uid) {
+                    return;
+                }
+                window.commonui.ucplinko.parentNode.removeChild(window.commonui.ucplinko);
+                delete window.commonui.ucplinko;
+            }, 5000);
+        }
+    }
+
     // 设置中心
     window.commonui && window.commonui.mainMenu && window.commonui.mainMenu.addItemOnTheFly('WD插件', null, () => {
         const setting_window = window.commonui.createCommmonWindow(4);
-        const $ = window._$;
         let setting_html = `
 <style>input#offs8:not(:checked)~span#nga_wd_helper_marklz_span{visibility:hidden;}</style>
 如有疑问，请前往阅读<a class="orangered" style="font-weight:bold" href="https://shimo.im/docs/QhJd3dKVvWh9Cx9W" target="_blank">[帮助文档]</a><br><br>
@@ -520,8 +547,6 @@
                                 const mark_span = document.createElement('span');
                                 mark_span.name = 'nga_wd_helper_lzmark2';
                                 mark_span.innerHTML = ` <a href="/read.php?tid=${window.__CURRENT_TID}&authorid=${authorid}" class="block_txt white nobr vertmod" style="background-color:#369;" title="由楼主发表 点此仅查看楼主发言">楼主</a>`;
-                                console.log(floors[i].recommendO.parentNode.parentNode);
-                                console.log(floors[i].recommendO.parentNode.nextElementSibling);
                                 floors[i].recommendO.parentNode.parentNode.insertBefore(mark_span, floors[i].recommendO.parentNode.nextElementSibling);
                             }
                         }
@@ -903,4 +928,5 @@
         }, 1000);
     }, 100);
 })();
+
 
